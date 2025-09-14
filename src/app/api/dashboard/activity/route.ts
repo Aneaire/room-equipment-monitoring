@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { attendanceLogs, equipment, alerts, users } from '@/lib/db/schema'
-import { desc, eq, sql, gte } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import { subDays } from 'date-fns'
 
 export async function GET() {
@@ -21,8 +21,8 @@ export async function GET() {
       })
       .from(attendanceLogs)
       .leftJoin(users, eq(attendanceLogs.userId, users.id))
-      .where(gte(attendanceLogs.checkInTime, threeDaysAgoTimestamp))
-      .orderBy(desc(attendanceLogs.checkInTime))
+      .where(sql`check_in_time >= ${threeDaysAgoTimestamp}`)
+      .orderBy(desc(sql`check_in_time`))
       .limit(5)
 
     // Get recent equipment issues
@@ -38,7 +38,7 @@ export async function GET() {
       })
       .from(equipment)
       .where(eq(equipment.status, 'missing'))
-      .orderBy(desc(equipment.updatedAt))
+      .orderBy(desc(sql`updated_at`))
       .limit(3)
 
     // Get recent alerts
@@ -52,7 +52,7 @@ export async function GET() {
       })
       .from(alerts)
       .where(eq(alerts.resolved, false))
-      .orderBy(desc(alerts.createdAt))
+      .orderBy(desc(sql`created_at`))
       .limit(3)
 
     // Combine and format activities
@@ -70,7 +70,7 @@ export async function GET() {
         type: 'equipment',
         user: 'System',
         action: eq.action,
-        time: new Date(eq.updatedAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: eq.updatedAt ? new Date(eq.updatedAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
         status: 'warning'
       })),
       ...recentAlerts.map(alert => ({

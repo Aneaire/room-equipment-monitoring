@@ -87,7 +87,7 @@ export const schedules = sqliteTable('schedules', {
   id: text('id').primaryKey(),
   labId: text('lab_id').notNull().references(() => laboratories.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  dayOfWeek: integer('day_of_week').notNull(), // 0 = Sunday, 1 = Monday, etc.
+  dayOfWeek: integer('day_of_week'), // 0 = Sunday, 1 = Monday, etc. (null for non-recurring)
   startTime: text('start_time').notNull(), // HH:MM format
   endTime: text('end_time').notNull(), // HH:MM format
   courseCode: text('course_code'),

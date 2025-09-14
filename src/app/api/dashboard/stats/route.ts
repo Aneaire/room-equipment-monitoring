@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { users, laboratories, equipment, attendanceLogs, alerts } from '@/lib/db/schema'
-import { eq, sql, gte, lte } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 export async function GET() {
   try {
@@ -28,18 +28,17 @@ export async function GET() {
       .from(alerts)
       .where(eq(alerts.resolved, false))
     
-    // Get today's attendance
+    // Get today's attendance using raw SQL
     const todayAttendance = await db
-      .select({ count: sql`count(distinct userId)` })
+      .select({ count: sql`count(distinct user_id)` })
       .from(attendanceLogs)
-      .where(gte(attendanceLogs.checkInTime, startOfToday))
+      .where(sql`check_in_time >= ${startOfToday}`)
 
-    // Get last week's attendance for comparison
+    // Get last week's attendance for comparison using raw SQL
     const lastWeekAttendance = await db
-      .select({ count: sql`count(distinct userId)` })
+      .select({ count: sql`count(distinct user_id)` })
       .from(attendanceLogs)
-      .where(gte(attendanceLogs.checkInTime, startOfLastWeek))
-      .where(lte(attendanceLogs.checkInTime, startOfToday))
+      .where(sql`check_in_time >= ${startOfLastWeek} AND check_in_time < ${startOfToday}`)
 
     return NextResponse.json({
       stats: {

@@ -129,7 +129,8 @@ export default function SchedulesPage() {
 
       if (teachersRes.ok) {
         const teachersData = await teachersRes.json()
-        setTeachers(teachersData.filter((user: User) => user.role === 'faculty'))
+        const usersArray = teachersData.users || teachersData
+        setTeachers(usersArray.filter((user: User) => user.role === 'faculty'))
       }
 
       if (labsRes.ok) {
@@ -359,38 +360,38 @@ export default function SchedulesPage() {
                     <SelectContent>
                       {laboratories.map(lab => (
                         <SelectItem key={lab.id} value={lab.id}>
-                          {lab.name} ({lab.building} {lab.roomNumber})
+                          <span className="line-clamp-1 block">{lab.name} ({lab.building} {lab.roomNumber})</span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="userId">Teacher *</Label>
-                  <Select value={formData.userId} onValueChange={(value) => setFormData({...formData, userId: value})}>
+                  <Label htmlFor="isRecurring">Schedule Type</Label>
+                  <Select value={formData.isRecurring.toString()} onValueChange={(value) => setFormData({...formData, isRecurring: value === 'true'})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select teacher" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {teachers.map(teacher => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.fullName} {getBiometricStatus(teacher.biometricId)}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="true">Recurring (Weekly)</SelectItem>
+                      <SelectItem value="false">One-time Event</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="isRecurring">Schedule Type</Label>
-                <Select value={formData.isRecurring.toString()} onValueChange={(value) => setFormData({...formData, isRecurring: value === 'true'})}>
+                <Label htmlFor="userId">Teacher *</Label>
+                <Select value={formData.userId} onValueChange={(value) => setFormData({...formData, userId: value})}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select teacher" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">Recurring (Weekly)</SelectItem>
-                    <SelectItem value="false">One-time Event</SelectItem>
+                    {teachers.map(teacher => (
+                      <SelectItem key={teacher.id} value={teacher.id}>
+                        {teacher.fullName} {getBiometricStatus(teacher.biometricId)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -515,31 +516,38 @@ export default function SchedulesPage() {
           <CardTitle>Scheduled Classes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Laboratory</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Biometric</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[200px]">Teacher</TableHead>
+                  <TableHead className="w-[180px]">Laboratory</TableHead>
+                  <TableHead className="w-[200px]">Schedule</TableHead>
+                  <TableHead className="w-[180px]">Course</TableHead>
+                  <TableHead className="w-[120px]">Biometric</TableHead>
+                  <TableHead className="w-[80px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {schedules.map((schedule) => (
                   <TableRow key={schedule.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{schedule.userName}</div>
-                        <div className="text-sm text-muted-foreground">{schedule.userEmail}</div>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate" title={schedule.userName}>
+                          {schedule.userName}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate" title={schedule.userEmail}>
+                          {schedule.userEmail}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{schedule.labName}</span>
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate" title={schedule.labName}>
+                          {schedule.labName}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -571,15 +579,21 @@ export default function SchedulesPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
+                      <div className="text-sm min-w-0">
                         {schedule.courseCode && (
-                          <div className="font-medium">{schedule.courseCode}</div>
+                          <div className="font-medium truncate" title={schedule.courseCode}>
+                            {schedule.courseCode}
+                          </div>
                         )}
                         {schedule.section && (
-                          <div className="text-muted-foreground">Section {schedule.section}</div>
+                          <div className="text-muted-foreground truncate" title={`Section ${schedule.section}`}>
+                            Section {schedule.section}
+                          </div>
                         )}
                         {schedule.subject && (
-                          <div className="text-muted-foreground">{schedule.subject}</div>
+                          <div className="text-muted-foreground truncate" title={schedule.subject}>
+                            {schedule.subject}
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -612,6 +626,7 @@ export default function SchedulesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
 
           {schedules.length === 0 && (

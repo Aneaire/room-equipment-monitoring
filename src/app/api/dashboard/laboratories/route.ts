@@ -22,8 +22,7 @@ export async function GET() {
         const issuesCount = await db
           .select({ count: sql`count(*)` })
           .from(equipment)
-          .where(eq(equipment.labId, lab.id))
-          .where(sql`${equipment.status} = 'missing' OR ${equipment.status} = 'damaged'`)
+          .where(sql`lab_id = ${lab.id} AND (status = 'missing' OR status = 'damaged')`)
 
         // Calculate occupancy (placeholder - would need real-time data)
         const occupancy = Math.floor(Math.random() * lab.capacity * 0.8) // Mock occupancy

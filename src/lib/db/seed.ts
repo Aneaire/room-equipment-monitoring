@@ -1,5 +1,5 @@
 import { db } from './index'
-import { users, laboratories, equipment, schedules, settings } from './schema'
+import { users, laboratories, equipment, schedules, settings, attendanceLogs, alerts } from './schema'
 import { hash } from 'bcryptjs'
 
 async function seed() {
@@ -566,12 +566,71 @@ async function seed() {
     },
   ])
 
+  // Create some sample attendance logs
+  console.log('📝 Creating sample attendance logs...')
+  const attendanceData = []
+  const facultyUsers = ['faculty-1', 'faculty-2', 'faculty-3', 'faculty-4', 'faculty-5']
+  const labIds = ['lab-1', 'lab-2', 'lab-3', 'lab-4', 'lab-5', 'lab-7', 'lab-8']
+  
+  // Generate attendance logs for the past few days
+  for (let i = 0; i < 50; i++) {
+    const randomFaculty = facultyUsers[Math.floor(Math.random() * facultyUsers.length)]
+    const randomLab = labIds[Math.floor(Math.random() * labIds.length)]
+    const randomDaysAgo = Math.floor(Math.random() * 7) // Past 7 days
+    const randomHoursAgo = Math.floor(Math.random() * 24) // Random hour in the day
+    const checkInTime = new Date(Date.now() - (randomDaysAgo * 24 * 60 * 60 * 1000) - (randomHoursAgo * 60 * 60 * 1000))
+    
+    attendanceData.push({
+      id: `attendance-${i + 1}`,
+      userId: randomFaculty,
+      labId: randomLab,
+      checkInTime: checkInTime,
+      verificationMethod: 'manual' as const,
+    })
+  }
+  
+  await db.insert(attendanceLogs).values(attendanceData)
+
+  // Create some sample alerts
+  console.log('🚨 Creating sample alerts...')
+  await db.insert(alerts).values([
+    {
+      id: 'alert-1',
+      type: 'equipment_missing',
+      labId: 'lab-1',
+      severity: 'medium',
+      title: 'Missing Equipment',
+      message: 'Keyboard missing from Station 5 in Computer Laboratory 1',
+      resolved: false,
+    },
+    {
+      id: 'alert-2',
+      type: 'unauthorized_access',
+      labId: 'lab-2',
+      severity: 'high',
+      title: 'Unauthorized Access',
+      message: 'Unknown person detected in Computer Laboratory 2 after hours',
+      resolved: false,
+    },
+    {
+      id: 'alert-3',
+      type: 'equipment_damaged',
+      labId: 'lab-3',
+      severity: 'low',
+      title: 'Equipment Damaged',
+      message: 'Monitor reported damaged at Station 12 in Networking Laboratory',
+      resolved: true,
+    },
+  ])
+
   console.log('✅ Database seeded successfully!')
   console.log('📊 Summary:')
   console.log(`   - Users: 10 (2 admins, 5 faculty, 3 custodians)`)
   console.log(`   - Laboratories: 8`)
   console.log(`   - Equipment: ${equipmentData.length} items`)
   console.log(`   - Schedules: 12 recurring classes`)
+  console.log(`   - Attendance Logs: ${attendanceData.length} records`)
+  console.log(`   - Alerts: 3 alerts`)
   console.log(`   - Settings: 12 system configurations`)
   console.log('\n🔐 Default Credentials:')
   console.log('   Admin: admin / admin123')
