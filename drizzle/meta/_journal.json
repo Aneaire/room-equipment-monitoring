@@ -8,6 +8,13 @@
       "when": 1757733281547,
       "tag": "0000_curly_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1757860078431,
+      "tag": "0001_familiar_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

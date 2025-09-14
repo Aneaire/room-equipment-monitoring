@@ -1,14 +1,14 @@
 # AGENTS.md
 
 ## Global Instructions
-- **Package Manager**: Use `npm` for all JavaScript/Node.js projects
+- **Package Manager**: Use `bun` for all JavaScript/Node.js projects
 - **Reusability**: Prioritize reusable components, functions, and patterns
 - **Web Design**: Use Tailwind CSS for styling and shadcn/ui for components
 
 ## Build, Lint, and Test Commands
-- **Build**: `npm run build` (Next.js production build)
-- **Lint**: `npm run lint` (ESLint with Next.js config)
-- **Database**: `npm run db:push`, `npm run db:generate`, `npm run db:migrate`, `npm run db:studio`
+- **Build**: `bun run build` (Next.js production build)
+- **Lint**: `bun run lint` (ESLint with Next.js config)
+- **Database**: `bun run db:push`, `bun run db:generate`, `bun run db:migrate`, `bun run db:studio`
 - **Test**: No testing framework configured - recommend adding Jest or Vitest
 
 ## Code Style Guidelines
