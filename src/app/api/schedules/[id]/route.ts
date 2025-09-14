@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { schedules } from '@/lib/db/schema'
-import { eq, and, or, gte, lte } from 'drizzle-orm'
+import { eq, and, or, gte, lte, ne, sql } from 'drizzle-orm'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const schedule = await db
       .select()
       .from(schedules)
-      .where(eq(schedules.id, params.id))
+      .where(eq(schedules.id, id))
       .limit(1)
 
     if (!schedule.length) {
@@ -28,7 +29,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const body = await request.json()
     const {
@@ -49,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const existingSchedule = await db
       .select()
       .from(schedules)
-      .where(eq(schedules.id, params.id))
+      .where(eq(schedules.id, id))
       .limit(1)
 
     if (!existingSchedule.length) {
@@ -104,7 +106,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             // One-time schedule conflict
             and(
               eq(schedules.isRecurring, false),
-              eq(schedules.startDate, startDate),
+              // Convert frontend timestamp to Date for comparison
+              eq(schedules.startDate, new Date(startDate * 1000)),
               or(
                 and(lte(schedules.startTime, startTime), gte(schedules.endTime, startTime)),
                 and(lte(schedules.startTime, endTime), gte(schedules.endTime, endTime)),
@@ -113,7 +116,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             )
           ),
           // Exclude current schedule
-          eq(schedules.id, params.id).not()
+          ne(schedules.id, id)
         )
       )
 
@@ -124,6 +127,26 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         { error: 'Schedule conflict detected for the specified room and time' },
         { status: 409 }
       )
+    }
+
+    // Handle date conversion for database
+    let processedStartDate = isRecurring ? null : null;
+    let processedEndDate = isRecurring ? null : null;
+    
+    if (!isRecurring && startDate) {
+      // startDate should be a Unix timestamp from frontend
+      const timestamp = typeof startDate === 'number' ? startDate : Number(startDate);
+      if (!isNaN(timestamp)) {
+        processedStartDate = new Date(timestamp * 1000);
+      }
+    }
+    
+    if (isRecurring && endDate) {
+      // endDate should be a Unix timestamp from frontend
+      const timestamp = typeof endDate === 'number' ? endDate : Number(endDate);
+      if (!isNaN(timestamp)) {
+        processedEndDate = new Date(timestamp * 1000);
+      }
     }
 
     // Update schedule
@@ -139,11 +162,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         section,
         subject,
         isRecurring,
-        startDate: isRecurring ? null : startDate,
-        endDate: isRecurring && endDate ? endDate : null,
+        startDate: processedStartDate,
+        endDate: processedEndDate,
         updatedAt: sql`unixepoch()`
       })
-      .where(eq(schedules.id, params.id))
+      .where(eq(schedules.id, id))
       .returning()
 
     return NextResponse.json(updatedSchedule[0])
@@ -156,13 +179,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     // Check if schedule exists
     const existingSchedule = await db
       .select()
       .from(schedules)
-      .where(eq(schedules.id, params.id))
+      .where(eq(schedules.id, id))
       .limit(1)
 
     if (!existingSchedule.length) {
@@ -172,7 +196,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       )
     }
 
-    await db.delete(schedules).where(eq(schedules.id, params.id))
+    await db.delete(schedules).where(eq(schedules.id, id))
 
     return NextResponse.json({ message: 'Schedule deleted successfully' })
   } catch (error) {

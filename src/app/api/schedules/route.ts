@@ -148,8 +148,8 @@ export async function POST(request: NextRequest) {
       section,
       subject,
       isRecurring,
-      startDate: isRecurring ? null : startDate,
-      endDate: isRecurring && endDate ? endDate : null
+      startDate: isRecurring ? null : (startDate ? new Date(startDate * 1000) : null),
+      endDate: isRecurring && endDate ? new Date(endDate * 1000) : null
     }).returning()
 
     return NextResponse.json(newSchedule[0], { status: 201 })
